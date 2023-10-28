@@ -6,8 +6,11 @@ const jwt = require("jsonwebtoken");
 const path = require("path")
 const nodemailer = require('nodemailer');
 const { log } = require("console");
+var fs = require("fs");
 const { deepStrictEqual } = require("assert");
-const linkpath = "http://192.168.0.102:2000/"
+const { fstat } = require("fs");
+// const linkpath = "http://154.41.254.204:2000/"
+const linkpath = "http://192.168.0.110:2000/"
 
 
 exports.login = async (req, res, next) => {
@@ -81,12 +84,23 @@ exports.addproperty = async (req, res) => {
       files.push(filepath);
 
     }
+
+    var data = await property.find()
+    if (data.length == 0) {
+      var ids = 1
+    } else {
+      data = data.slice(-1)
+      console.log(data);
+      ids = data[0].ids + 1
+    }
+    console.log(ids);
     const newProperty = await property.create(
       {
         propertydetails: {
           data: ds
         },
-        images: files
+        images: files,
+        ids
       })
 
     res.status(201).json({
@@ -119,6 +133,89 @@ exports.singleproperty = async (req, res) => {
 
 }
 
+exports.updateproperty = async (req, res) => {
+
+  try {
+    console.log(req.params);
+    console.log(req.body);
+    function stringToJson(string) {
+      try {
+        const jsonData = JSON.parse(string);
+        return jsonData;
+      } catch (error) {
+        console.log(`Error: ${error}`);
+        return null;
+      }
+    }
+
+    var ss = stringToJson(req.body.data)
+    if (req.params.id) {
+      
+      if (req.files.length == 0) {
+        var ss = ss.propertydetails.data
+        var dataupdate = await property.findByIdAndUpdate(req.params.id, {
+          propertydetails: {
+            data: ss
+          }
+        })
+        if (dataupdate) {
+          res.status(200).json({ message: "property updated successfully" })
+        } else {
+          res.status(404).json({ message: "property not found" })
+        }
+      } else {
+
+        var data = await property.findById(req.params.id);
+        if (data) {
+          // res.status(200).json(data.images)
+          for (var i = 0; i < data.images.length; i++) {
+            var arraypathdata = data.images[i]
+            var paths = arraypathdata.replace(linkpath, "")
+            console.log(paths, "5");
+            if (fs.existsSync(path.join(__dirname, '../images/', paths))) {
+              fs.unlinkSync(path.join(__dirname, '../images/', paths))
+            }
+          }
+
+          const files2 = req.files;
+          const files = [];
+          for (const file of files2) {
+
+            const filepath = linkpath + file.filename;
+            files.push(filepath);
+
+          }
+          console.log(ss);
+          var ss = ss.propertydetails.data
+
+          console.log(ss,files);
+          var dataupdate = await property.findByIdAndUpdate(req.params.id, {
+            propertydetails: {
+              data: ss
+            },
+            images: files,
+          })
+          if (dataupdate) {
+            res.status(200).json({ message: "property updated successfully" })
+          } else {
+            res.status(404).json({ message: "property not found" })
+          }
+
+        } else {
+          res.json({ message: "property not found" })
+        }
+
+      }
+    } else { 
+      res.json({ message: "property id not found" })
+    }
+  } catch (err) {
+    if (err) {
+      console.log(err)
+    }
+  }
+}
+
 exports.profile = async (req, res) => {
 
   console.log(req.user, "profile")
@@ -126,17 +223,16 @@ exports.profile = async (req, res) => {
 
 }
 
-
-
 exports.filter = async (req, res) => {
+  
   function convertDataToLowerCase(data) {
     return JSON.parse(JSON.stringify(data).toLowerCase());
   }
-  
-  var data = await property.find()
-  data= convertDataToLowerCase(data)
 
-   function findTotalPrice(obj) {
+  var data = await property.find()
+  data = convertDataToLowerCase(data)
+
+  function findTotalPrice(obj) {
     let totalPrice = null;
     if (Array.isArray(obj)) {
       for (const item of obj) {
@@ -192,14 +288,18 @@ exports.filter = async (req, res) => {
         if (searchTerms.some(term => obj[key].includes(term))) {
           return true;
         }
-      }
+      } 
     }
     return false;
   }
 }
 
 exports.pricefilter = async (req, res) => {
-  var main = (b) => {
 
+  var main = (b) => {
+    return b.filter(item => {
+      const totalPrice = findTotalPrice(item.propertydetails.data);
+      return totalPrice !== null && totalPrice <= req.body.price;
+    })
   }
 }

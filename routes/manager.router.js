@@ -13,16 +13,18 @@ const {
     singleproperty,
     profile,
     filter,
-    pricefilter
+    pricefilter,
+    updateproperty
 } = require('../controller/manager.controller')
 
 router.post('/login',login)
-router.post('/addproperty',manager_token,upload.array('image'),addproperty)
+router.post('/addproperty',upload.array('image'),addproperty)
 router.get('/property',manager_token,property)
 router.get('/properties/:id',manager_token,singleproperty)
 router.get('/profile',manager_token,profile)
 router.post('/filter',filter) 
 router.post('/price',manager_token,pricefilter)
+router.put('/updateproperty/:id',manager_token,upload.array('image'),updateproperty)
 
 router.get('/logout',manager_token,(req,res)=>{           
 

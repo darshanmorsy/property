@@ -13,18 +13,18 @@ const morgan = require('morgan')
 
 app.use(morgan('dev'));
 const bodyParser = require("body-parser")
+app.use(express.urlencoded({ extends: true}))
 app.use(bodyParser.json({
     limit: "100mb"
 }))
 
 app.use(cors({
     origin: '*',
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', 
     credentials: true,
 }))
 
-app.use(express.urlencoded({ extends: true }))
-app.use(express.static(path.join(__dirname, 'images')))
+app.use(express.static(path.join(__dirname, 'images'))) 
 app.use(flash())
 app.use(cookieParser())
 
@@ -36,12 +36,11 @@ app.use(session({
     secret: 'secret',
     resave: false
 }))
+
 app.use('/admin', require('./routes/admin.router'))
 app.use('/manager', require('./routes/manager.router'))
-
 const { MongoClient } = require('mongodb')
 const { kStringMaxLength } = require('buffer')
-
 
 // app.get('/delete', async (req, res) => {
 //   try {
@@ -69,9 +68,7 @@ const { kStringMaxLength } = require('buffer')
 
 
 app.use((req, res) => {
-
     res.json({ message: "404" })
-
 })
 
 app.listen(port, (error) => {
@@ -79,4 +76,4 @@ app.listen(port, (error) => {
         console.log(error)
     }
     console.log("Server Is Running " + port)
-})
+}) 

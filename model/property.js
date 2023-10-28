@@ -9,9 +9,12 @@ const propertyschema = new mongoose.Schema({
   },
   status:{
     type:Number,
-    default:1
+    default:1,
+  },
+  ids:{
+    type:Number,
   }
 },{
   timestamps:true,            
 })
-module.exports = mongoose.model('Property', propertyschema);
+module.exports = mongoose.model('Property', propertyschema)
